@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 
 
 	try {
-		const users = await userCollection.find().project({first_name: 1, last_name: 1, email: 1, _id: 1}).toArray();
+		const users = await userCollection.find().project({first_name: 1, last_name: 1, email: 1, _id: 1, image_id: 1}).toArray();
 
 		if (users === null) {
 			res.render('error', {message: 'Error connecting to MongoDB'});
@@ -94,16 +94,16 @@ router.post('/setUserPic', upload.single('image'), function(req, res, next) {
 			console.log("userId: "+user_id);
 
 			//joi
-			const schema = joi.object(
-				{
-					user_id: joi.string().alphanum().min(24).max(24).required()
-				});
-				const validationResult = schema.validate({user_id});
-				if (validationResult.error != null) {
-					console.log(validationResult.error);
-					res.render('error', {message: 'Invalid user_id'});
-					return;
-				}
+			// const schema = Joi.object(
+			// 	{
+			// 		user_id: Joi.string().alphanum().min(24).max(24).required()
+			// 	});
+			// 	const validationResult = schema.validate({user_id});
+			// 	if (validationResult.error != null) {
+			// 		console.log(validationResult.error);
+			// 		res.render('error', {message: 'Invalid user_id'});
+			// 		return;
+			// 	}
 				const success = await userCollection.updateOne({"_id": new ObjectId(user_id)},
 				{$set: {image_id: image_uuid}},
 				{});
@@ -247,6 +247,46 @@ router.get('/deleteUser', async (req, res) => {
 		res.render('error', {message: 'Error connecting to MongoDB'});
 		console.log("Error connecting to MongoDB");
 		console.log(ex);	
+	}
+});
+
+router.get('/deleteUserImage', async (req, res) => {
+	try {
+		console.log("delete user image");
+
+		let user_id = req.query.id;
+
+		const schema = Joi.object(
+			{
+				user_id: Joi.string().alphanum().min(24).max(24).required()
+			});
+
+			const validationResult = schema.validate({user_id});
+			if (validationResult.error != null) {
+				console.log(validationResult.error);
+
+				res.render('error', {message: 'Invalid user_id'});
+				return;
+			}
+			if (user_id) {
+				console.log("userId: "+user_id);
+				const success = await userCollection.updateOne({"_id": new ObjectId(user_id)},
+					{$set: {image_id: undefined}},
+					{}
+				);
+
+				console.log("deleteUserImage: ");
+				console.log(success);
+				if (!success) {
+					res.render('error', {message: 'Error connecting to MongoDB'});
+					console.log("Error connecting to MongoDB");
+				}
+			}
+			res.redirect("/");
+	} catch (ex) {
+		res.render('error', {message: 'Error connecting to MongoDB'});
+		console.log("Error connecting to MongoDB");
+		console.log(ex);
 	}
 });
 
